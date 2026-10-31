@@ -1,7 +1,7 @@
 name: PayPal 2026 sandbox gateway and SellerPilot tests
 on:
   push:
-    branches: [main, fix/paypal-safe-retries]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -17,7 +17,7 @@ jobs:
           node-version: '22'
           cache: npm
       - name: Gateway mock tests (not proof of PayPal sandbox integration)
-        run: node --test paypal-sandbox/test.mjs paypal-sandbox/idempotency.test.mjs
+        run: node --test paypal-sandbox/test.mjs paypal-sandbox/idempotency.test.mjs paypal-sandbox/demo.test.mjs
       - name: Original SellerPilot dependency/install tests
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Run inherited tests
