@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 
 const html=readFileSync(new URL('./demo.html',import.meta.url),'utf8');
 test('browser loads the ES-module control script, not a classic script',()=>{
- assert.match(html,/<script\\s+type="module"\\s+src="\\/demo\\.js"><\\/script>/);
+ assert.ok(html.includes('<script type="module" src="/demo.js"></script>'));
 });
 
 test('invalid input is visible and in-flight create responses cannot restore reset orders',async()=>{
