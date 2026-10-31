@@ -125,9 +125,10 @@ export function makeServer({ client = new PayPalSandbox(), env = process.env, ex
     const respond = (status, value) => { res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(value)); };
     try {
       // Local-only judge-facing demo; no external assets, auth token never persisted.
-      if (req.method === 'GET' && (req.url === '/demo' || req.url === '/demo.js')) {
-        const js = req.url === '/demo.js';
-        const page = readFileSync(new URL(js ? './demo.js' : './demo.html', import.meta.url), 'utf8');
+      if (req.method === 'GET' && (req.url === '/demo' || req.url === '/demo.js' || req.url === '/idempotency.mjs')) {
+        const js = req.url !== '/demo';
+        const file = req.url === '/demo' ? './demo.html' : '.' + req.url;
+        const page = readFileSync(new URL(file, import.meta.url), 'utf8');
         res.writeHead(200, { 'Content-Type': js ? 'text/javascript; charset=utf-8' : 'text/html; charset=utf-8',
           'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
           'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'" });

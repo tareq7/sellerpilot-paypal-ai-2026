@@ -6,6 +6,10 @@ An isolated localhost-only Node.js server implements official **PayPal Orders v2
 
 Optional AI endpoint calls a real OpenAI-compatible `/chat/completions` provider using environment-supplied credentials and a minimal scrubbed order summary. **It fails closed without a configured model**—there is no fabricated AI output. The existing Meta model route remains gated. No model service or PayPal credentials have been verified by this module alone.
 
+## Safe retries in the local browser demo
+
+The demo uses in-memory, caller-stable `PayPal-Request-Id` keys for repeated create/capture requests until **Start a new order** is explicitly clicked. This avoids changing idempotency keys merely because a request times out. The keys are lost on page reload or process restart; there is **no durable order/capture journal or cross-device duplicate protection**. Before retrying an ambiguous capture, GET the order status and confirm it is still APPROVED. The current test UI is not a production payment frontend and has no proven live PayPal transaction.
+
 ## Setup
 
 Node.js 20+. From this subdirectory:
