@@ -1,0 +1,12 @@
+{
+  "name": "sellerpilot-paypal-sandbox-gateway",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test.mjs",
+    "start": "node index.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
