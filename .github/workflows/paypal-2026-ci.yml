@@ -1,0 +1,26 @@
+name: PayPal 2026 sandbox gateway and SellerPilot tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Gateway mock tests (not proof of PayPal sandbox integration)
+        run: node --test paypal-sandbox/test.mjs
+      - name: Original SellerPilot dependency/install tests
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Run inherited tests
+        run: npm test
+      - name: Build inherited dashboard
+        run: npm run build
