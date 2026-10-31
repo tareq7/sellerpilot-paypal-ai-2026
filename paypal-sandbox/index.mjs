@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { readFileSync } from 'node:fs';
 import { randomUUID, timingSafeEqual } from 'node:crypto';
 
 const ORIGIN = 'https://api-m.sandbox.paypal.com';
@@ -123,6 +124,15 @@ export function makeServer({ client = new PayPalSandbox(), env = process.env, ex
   return createServer(async (req, res) => {
     const respond = (status, value) => { res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(value)); };
     try {
+      // Local-only judge-facing demo; no external assets, auth token never persisted.
+      if (req.method === 'GET' && (req.url === '/demo' || req.url === '/demo.js')) {
+        const js = req.url === '/demo.js';
+        const page = readFileSync(new URL(js ? './demo.js' : './demo.html', import.meta.url), 'utf8');
+        res.writeHead(200, { 'Content-Type': js ? 'text/javascript; charset=utf-8' : 'text/html; charset=utf-8',
+          'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
+          'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'" });
+        res.end(page); return;
+      }
       if (req.url === '/health' && req.method === 'GET') return respond(200, {
         mode: 'SANDBOX_ONLY', configured: Boolean(env.PAYPAL_SANDBOX_CLIENT_ID && env.PAYPAL_SANDBOX_CLIENT_SECRET && env.API_APPROVAL_TOKEN), aiConfigured: Boolean(env.MODEL_CHAT_COMPLETIONS_URL && env.MODEL_ID && env.MODEL_API_KEY)
       });

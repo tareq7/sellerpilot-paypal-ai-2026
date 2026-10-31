@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SellerPilot — PayPal Sandbox Agentic Commerce</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#16283d;background:#f4f8fc}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:940px;margin:auto;padding:36px 22px}
+header{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+h1{font-size:2rem;line-height:1.15;margin:8px 0}h2{font-size:1.16rem;margin-top:0}
+p{line-height:1.52}.muted{color:#526578}.tag{background:#e4f2f1;color:#086453;padding:6px 12px;border-radius:18px;font-weight:650}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:24px}
+article{border:1px solid #dbe4ee;border-radius:14px;padding:22px;background:white;box-shadow:0 6px 22px #1234}
+label{display:block;font-weight:650;margin:12px 0 6px}input{border:1px solid #b4c5d6;border-radius:8px;padding:11px;width:100%;font:inherit}
+button,a.action{display:inline-block;border:0;border-radius:8px;padding:11px 17px;background:#135ca6;color:white;cursor:pointer;font-weight:700;text-decoration:none;margin-top:14px}
+button:hover{background:#114978}button:disabled{background:#899cab}pre{white-space:pre-wrap;overflow-wrap:anywhere;border-radius:9px;padding:15px;background:#edf3f9;min-height:72px;font-size:13px;line-height:1.55}
+small{color:#596f86}.warning{padding:16px;border-left:4px solid #bf7800;background:#fff7e8;border-radius:5px}
+</style></head>
+<body><div class="wrap"><header><div><span class="tag">LOCAL • PAYPAL SANDBOX ONLY</span><h1>SellerPilot — Agentic Checkout</h1><p class="muted">Human-controlled test orders, buyer approval, capture and evidence-grounded AI explanation</p></div></header>
+<p class="warning"><strong>Demonstration environment.</strong> This page never uses real payment credentials. No order is captured before you explicitly approve the action and the sandbox buyer approves it. AI explanations are unavailable until a genuine model endpoint is configured.</p>
+<article><h2>Session approval</h2><p>Enter the privately configured local service approval token. It stays in this page's memory and is never stored in a cookie or local storage.</p>
+<label for="token">Local approval token</label><input id="token" type="password" autocomplete="off" placeholder="Paste the configured API_APPROVAL_TOKEN"></article>
+<div class="grid">
+<article><h2>1. Create a synthetic order</h2><label for="amount">Sandbox amount (USD)</label><input id="amount" type="text" value="1.00" pattern="[0-9]+\.[0-9]{2}" inputmode="decimal"><button id="create">Approve & create sandbox order</button><p id="approvalLink" aria-live="polite"></p></article>
+<article><h2>2. Buyer approval & capture</h2><p>Approve the order in the PayPal <em>sandbox buyer</em> account. The service verifies the APPROVED state before capture.</p><label for="orderId">PayPal sandbox order ID</label><input id="orderId" type="text" autocomplete="off" placeholder="Created order ID"><button id="refresh">Check order status</button> <button id="capture">Approve & capture</button></article>
+<article><h2>3. AI explanation</h2><p>A real configured model explains the observed order status. Missing credentials return an error rather than a fictional result.</p><button id="explain">Explain with live model</button></article>
+</div>
+<article style="margin-top:16px"><h2>Audit console</h2><p class="muted">HTTP result from the actual sandbox gateway; this is not independently verified transaction settlement.</p><pre id="output" aria-live="polite">Ready. Configure sandbox credentials and model API to run end to end.</pre></article>
+<footer><p><small>Source: SellerPilot AI (Meta-era baseline) plus PayPal AI 2026 adaptation. PayPal developer APIs are called server-side. Do not deploy this local diagnostic UI publicly without a security review.</small></p></footer></div><script src="/demo.js"></script></body></html>
