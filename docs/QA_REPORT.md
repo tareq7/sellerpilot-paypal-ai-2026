@@ -1,3 +1,5 @@
+> **PayPal AI Hackathon 2026 adaptation:** The contents below document the inherited Meta-era baseline and must NOT be treated as verification of new PayPal sandbox behavior. New integration is planned only; see [event checklist](SUBMISSION_CHECKLIST.md).
+
 # Quality report — October 27, 2026
 
 ## Verified state

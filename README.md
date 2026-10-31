@@ -1,4 +1,32 @@
-# SellerPilot AI — intelligence, in control.
+# SellerPilot AI — PayPal AI Hackathon 2026 adaptation
+
+**Event:** PayPal AI Hackathon 2026  
+**Status:** **Preparation only — NOT submitted, NOT PayPal-integrated.**  
+**Deadline:** November 12, 2026, 12:00 PM PST  
+**This repo:** https://github.com/tareq7/sellerpilot-paypal-ai-2026  
+**Source/provenance:** https://github.com/tareq7/sellerpilot-ai (built October 26–28, 2026 and already submitted separately to Meta Global AI Developer Hackathon).
+
+> This is a full-history clone of SellerPilot AI, not a new project. Existing inventory/advertising functionality and the original video belong to the Meta-era baseline. The new PayPal feature and new demonstration have **not** been implemented, tested, or published. Updating documentation does **not** qualify as a significant technical update. Do not enter this repo in PayPal until the checklist is complete.
+
+## PayPal AI Hackathon 2026: intended extension
+
+Seller-facing payment approval and reconciliation flow: combine existing stock/spend recommendations with PayPal sandbox Orders API and a bounded AI assistant that explains order/payment outcomes. Keep all real payment actions sandbox-only and human-approved.
+
+### Required before submission
+
+- [ ] Integrate a real, testable PayPal sandbox API or SDK as a central feature (for example Orders v2, approved seller checkout and refund simulation).
+- [ ] Make AI operational in the user experience. The inherited Meta API route is disabled, so it cannot be represented as working AI integration.
+- [ ] Implement and test significant functionality in this hackathon's submission period; disclose prior work and provide a clear change log.
+- [ ] Publish an actual functional build, publicly accessible source and an explicit open-source LICENSE file.
+- [ ] Record an event-specific YouTube demo under three minutes, demonstrating the PayPal sandbox and AI behavior.
+
+The public app at https://sellerpilot-ai-phi.vercel.app and its three-minute video show the **original Meta project**; they are not an event-specific PayPal demonstration. Do not cite them as proof of PayPal integration. Original history and original source remain accessible for audit.
+
+---
+
+## Existing implementation — original Meta project baseline (retained for provenance)
+
+### SellerPilot AI — intelligence, in control.
 
 **An evidence-backed, bilingual marketplace-operations copilot for Amazon.sa and Noon.sa.**
 
@@ -40,8 +68,8 @@ A campaign showing 7× ROAS can be **bad for a business if the advertised SKU ru
 Requirements: Node.js 22+ and npm.
 
 \`\`\`bash
-git clone https://github.com/tareq7/sellerpilot-ai.git
-cd sellerpilot-ai
+git clone https://github.com/tareq7/sellerpilot-paypal-ai-2026.git
+cd sellerpilot-paypal-ai-2026
 npm ci
 npm test
 npm run build

@@ -1,3 +1,5 @@
+> **PayPal AI Hackathon 2026 adaptation:** The contents below document the inherited Meta-era baseline and must NOT be treated as verification of new PayPal sandbox behavior. New integration is planned only; see [event checklist](SUBMISSION_CHECKLIST.md).
+
 # Security model and explicit spending gate
 
 The public SellerPilot demo works without paid APIs, merchant login or marketplace writes. Canonicalized Amazon/Noon CSVs are analyzed locally in the user's browser. The app is not permitted to send imported private reports to the Meta **Contributor** model, because Meta may use prompts and outputs to improve its models.
