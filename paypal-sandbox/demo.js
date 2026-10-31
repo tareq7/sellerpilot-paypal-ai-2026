@@ -1,3 +1,5 @@
+import { createOperationIds } from './idempotency.mjs';
+const operationIds=createOperationIds();
 'use strict';
 const el=id=>document.getElementById(id);
 const output=el('output');
@@ -12,12 +14,8 @@ const call=async (method,path,body)=>{
     return response.ok?data:null;
   }catch(error){record(0,{error:'Local gateway unreachable or request failed'});return null}
 };
-const requestId=()=>{
-  if(!globalThis.crypto?.randomUUID)throw new Error('Secure randomness not available');
-  return crypto.randomUUID().replaceAll('-','');
-};
 el('create').addEventListener('click',async()=>{
-  const data=await call('POST','/orders',{amount:el('amount').value,requestId:requestId(),approved:true});
+  const data=await call('POST','/orders',{amount:el('amount').value,requestId:operationIds.get('create',el('amount').value),approved:true});
   if(!data)return;
   el('orderId').value=data.id||'';
   const link=(data.links||[]).find(x=>x.rel==='approve'||x.rel==='payer-action');
@@ -32,5 +30,13 @@ el('create').addEventListener('click',async()=>{
 });
 const selectedId=()=>el('orderId').value.trim().toUpperCase();
 el('refresh').addEventListener('click',()=>call('GET','/orders/'+encodeURIComponent(selectedId())));
-el('capture').addEventListener('click',()=>call('POST','/orders/'+encodeURIComponent(selectedId())+'/capture',{requestId:requestId(),approved:true}));
+el('capture').addEventListener('click',()=>call('POST','/orders/'+encodeURIComponent(selectedId())+'/capture',{requestId:operationIds.get('capture',selectedId()),approved:true}));
 el('explain').addEventListener('click',()=>call('POST','/orders/'+encodeURIComponent(selectedId())+'/explain',{}));
+
+// Reset is the only way to start a fresh logical order with a new idempotency key.
+el('newOrder').addEventListener('click',()=>{
+  operationIds.reset();
+  el('orderId').value='';
+  el('approvalLink').replaceChildren();
+  record(0,{message:'New synthetic order session. Approval will be required again.'});
+});
