@@ -1,12 +1,23 @@
 # SellerPilot AI — PayPal AI Hackathon 2026 adaptation
 
 **Event:** PayPal AI Hackathon 2026  
-**Status:** **Preparation only — NOT submitted, NOT PayPal-integrated.**  
+**Status:** **Local PayPal Orders v2 sandbox gateway implemented and CI-tested with mocks; no live PayPal credentials or successful transaction verified; NOT submitted.**  
 **Deadline:** November 12, 2026, 12:00 PM PST  
 **This repo:** https://github.com/tareq7/sellerpilot-paypal-ai-2026  
 **Source/provenance:** https://github.com/tareq7/sellerpilot-ai (built October 26–28, 2026 and already submitted separately to Meta Global AI Developer Hackathon).
 
-> This is a full-history clone of SellerPilot AI, not a new project. Existing inventory/advertising functionality and the original video belong to the Meta-era baseline. The new PayPal feature and new demonstration have **not** been implemented, tested, or published. Updating documentation does **not** qualify as a significant technical update. Do not enter this repo in PayPal until the checklist is complete.
+> This is a full-history clone of SellerPilot AI, not a new project. Existing inventory/advertising functionality and the original video belong to the Meta-era baseline. A new sandbox Orders v2 API and local browser demonstration UI now exist in [paypal-sandbox/](paypal-sandbox/README.md), with automated mock/regression tests. **They have NOT been run against real PayPal sandbox credentials, and no verified end-to-end transaction or working AI model result exists yet.** Updating documentation does **not** qualify as a significant technical update. Do not enter this repo in PayPal until the checklist is complete.
+
+## Newly implemented in this hackathon variant (not live-verified)
+
+- [x] Node.js PayPal sandbox Orders v2 OAuth client with order creation, status and approval-gated capture; automated mock tests.
+- [x] Localhost-only judge demonstration UI for manual sandbox create → buyer approval → capture → AI explain.
+- [x] Configurable real model inference integration that fails closed without a valid model provider; there is **no fabricated AI response**.
+- [x] GitHub Actions mock and regression tests passed; not proof of actual PayPal payment or model inference.
+- [ ] Authenticate with a real PayPal developer sandbox and capture an approved sandbox order end-to-end.
+- [ ] Verify a real AI response and integrate with the SellerPilot merchant workflow.
+- [ ] Audit existing media license rights; add valid top-level open-source license covering software.
+- [ ] Publish a new under-three-minute public YouTube demo and submit Devpost.
 
 ## PayPal AI Hackathon 2026: intended extension
 
