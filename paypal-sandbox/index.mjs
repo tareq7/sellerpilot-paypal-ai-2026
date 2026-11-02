@@ -89,17 +89,36 @@ export class PayPalSandbox {
     return this.request('POST', '/v2/checkout/orders/' + orderId + '/capture', {}, requestId);
   }
 }
+const safeText = (value, max) => typeof value === 'string' ? value.slice(0, max) : '';
+const safeAmount = (amount) => amount && typeof amount === 'object' ? {
+  currency_code: safeText(amount.currency_code, 8),
+  value: safeText(amount.value, 20)
+} : null;
+export function sanitizedOrderForModel(order) {
+  const unit = Array.isArray(order?.purchase_units) ? order.purchase_units[0] : null;
+  const captures = Array.isArray(unit?.payments?.captures) ? unit.payments.captures.slice(0, 3) : [];
+  return {
+    id: safeText(order?.id, 50),
+    status: safeText(order?.status, 30),
+    amount: safeAmount(unit?.amount),
+    captures: captures.map(capture => ({
+      id: safeText(capture?.id, 50),
+      status: safeText(capture?.status, 30),
+      amount: safeAmount(capture?.amount)
+    }))
+  };
+}
 export async function explainOrderWithModel(order, { endpoint = process.env.MODEL_CHAT_COMPLETIONS_URL, model = process.env.MODEL_ID, key = process.env.MODEL_API_KEY, fetcher = globalThis.fetch } = {}) {
   if (!endpoint || !model || !key) throw new SafeError('Live AI inference not configured (no fabricated fallback)', 503);
   const url = new URL(endpoint);
   if (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost','127.0.0.1'].includes(url.hostname))) {
     throw new SafeError('Model endpoint must be HTTPS or localhost');
   }
-  const safeOrder = { id: String(order.id || '').slice(0, 50), status: String(order.status || '').slice(0, 30), amount: order.purchase_units?.[0]?.amount ?? null };
+  const safeOrder = sanitizedOrderForModel(order);
   const r = await fetcher(url, { method: 'POST', signal: AbortSignal.timeout(WAIT_MS),
     headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
     body: JSON.stringify({ model, temperature: 0, max_tokens: 256, messages: [
-      { role: 'system', content: 'Explain the PayPal SANDBOX status of a synthetic demo order to a merchant. Use only given fields. Do not infer capture or shipment. Say when unpaid or awaiting buyer approval. Do not request purchases.' },
+      { role: 'system', content: 'Explain PayPal SANDBOX orders to a merchant using only the supplied sanitized fields. Distinguish order status from capture records: say payment was captured only if a capture has status COMPLETED. Otherwise state capture is not verified. Never infer shipping, buyer identity, payout, refund, or real-money movement. Do not request purchases.' },
       { role: 'user', content: JSON.stringify(safeOrder) }
     ] })
   });
