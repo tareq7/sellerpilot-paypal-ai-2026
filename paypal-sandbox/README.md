@@ -1,6 +1,6 @@
 # SellerPilot PayPal AI Hackathon 2026 — sandbox Orders gateway
 
-**STATUS: API CODE ADDED, NOT END-TO-END VERIFIED AGAINST PAYPAL; NOT A HACKATHON SUBMISSION.** The original SellerPilot dashboard was built for Meta Global AI Developer Hackathon; this gateway is a subsequent, substantial but still incomplete PayPal-specific implementation.
+**STATUS: Direct PayPal developer sandbox API payment verified on November 2. The SellerPilot gateway has automated tests; its own credentialed checkout and live AI response remain unverified. NOT a final submission.** The original SellerPilot dashboard was built for Meta Global AI Developer Hackathon; this gateway is a subsequent, substantial but still incomplete PayPal-specific implementation.
 
 An isolated localhost-only Node.js server implements official **PayPal Orders v2** create, get and capture paths using server-side OAuth 2.0 client credentials. Order creation and capture require an explicit `approved: true` flag **and** a long server-issued `API_APPROVAL_TOKEN` bearer secret. A buyer still must approve an order in the PayPal sandbox before capture. No real transactions are supported.
 
@@ -43,3 +43,19 @@ The demo server provides no persistent audit DB, user identity verification, web
 - [ ] Add secure persistent state/audit and deployable judge demo or complete local run flow.
 - [ ] Determine lawful open-source license after auditing inherited assets; add top-level LICENSE.
 - [ ] Record and publish new under-three-minute **YouTube** demo, submit final Devpost entry, verify confirmation.
+
+## Sandbox-only acceptance helper
+
+`live-acceptance.mjs` is a local QA tool that calls **this application's localhost gateway**, not PayPal production. It operates on a fixed simulated USD 0.01 order and preserves non-secret request IDs so an interrupted operation does not silently use a new idempotency key.
+
+1. Set `PAYPAL_SANDBOX_CLIENT_ID`, `PAYPAL_SANDBOX_CLIENT_SECRET`, and a randomly generated 32+-character `API_APPROVAL_TOKEN` privately (never commit or share them). Start `node index.mjs` on the developer machine.
+2. In a second terminal with the same `API_APPROVAL_TOKEN`, run `node live-acceptance.mjs create`. It prints the order ID and an HTTPS buyer link on **sandbox.paypal.com** only.
+3. Approve the order using a **personal PayPal sandbox buyer** and simulated PayPal funds. Then run `node live-acceptance.mjs inspect` to confirm `APPROVED`.
+4. Run `node live-acceptance.mjs capture --confirm-sandbox-capture`. The CLI requires the explicit flag and only reports success after validating a `COMPLETED` capture ID, matching order ID, and exact USD 0.01 amount. A repeat call checks the existing completed capture rather than charging again.
+5. With a legitimate configured OpenAI-compatible AI endpoint, run `node live-acceptance.mjs explain`; it fails closed if the model does not actually answer.
+
+The CLI stores the current **non-secret** operation state in a user-local temporary file and refuses to start a new logical order while that state exists. Keep that file private. Do not manually delete it after an uncertain network failure; investigate the status and original idempotency key first. On Windows PowerShell, use `$env:KEY = 'value'` instead of Unix `export KEY='value'`.
+
+A compatible optional free-plan model endpoint is Groq `https://api.groq.com/openai/v1/chat/completions` with `MODEL_ID=openai/gpt-oss-20b`, subject to the developer's actual free quota and having a valid private API key. The repository contains **no model credentials or paid-usage authorization**.
+
+Run `node --test` or `npm test` inside this directory for acceptance-helper, gateway, and startup tests. **A passing mock test does not constitute a live PayPal payment or a real AI inference.**
