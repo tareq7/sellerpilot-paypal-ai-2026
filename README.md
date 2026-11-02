@@ -1,173 +1,75 @@
-# SellerPilot AI — PayPal AI Hackathon 2026 adaptation
+# SellerPilot AI — PayPal AI Hackathon 2026
 
-**Event:** PayPal AI Hackathon 2026  
-**Status:** **Local PayPal Orders v2 sandbox gateway implemented and CI-tested with mocks; no live PayPal credentials or successful transaction verified; NOT submitted.**  
-**Deadline:** November 12, 2026, 12:00 PM PST  
-**This repo:** https://github.com/tareq7/sellerpilot-paypal-ai-2026  
-**Source/provenance:** https://github.com/tareq7/sellerpilot-ai (built October 26–28, 2026 and already submitted separately to Meta Global AI Developer Hackathon).
+**Human-approved merchant operations with PayPal sandbox checkout and AI explanations.**
 
-> This is a full-history clone of SellerPilot AI, not a new project. Existing inventory/advertising functionality and the original video belong to the Meta-era baseline. A new sandbox Orders v2 API and local browser demonstration UI now exist in [paypal-sandbox/](paypal-sandbox/README.md), with automated mock/regression tests. **They have NOT been run against real PayPal sandbox credentials, and no verified end-to-end transaction or working AI model result exists yet.** Updating documentation does **not** qualify as a significant technical update. Do not enter this repo in PayPal until the checklist is complete.
+[PayPal AI Hackathon](https://paypalaihackathon.devpost.com/) · [Sandbox gateway](paypal-sandbox/README.md) · [Original SellerPilot project](https://github.com/tareq7/sellerpilot-ai)
 
-## Newly implemented in this hackathon variant (not live-verified)
+## Project
 
-- [x] Node.js PayPal sandbox Orders v2 OAuth client with order creation, status and approval-gated capture; automated mock tests.
-- [x] Localhost-only judge demonstration UI for manual sandbox create → buyer approval → capture → AI explain.
-- [x] Configurable real model inference integration that fails closed without a valid model provider; there is **no fabricated AI response**.
-- [x] GitHub Actions mock and regression tests passed; not proof of actual PayPal payment or model inference.
-- [ ] Authenticate with a real PayPal developer sandbox and capture an approved sandbox order end-to-end.
-- [ ] Verify a real AI response and integrate with the SellerPilot merchant workflow.
-- [ ] Audit existing media license rights; add valid top-level open-source license covering software.
-- [ ] Publish a new under-three-minute public YouTube demo and submit Devpost.
+SellerPilot helps merchants review inventory and advertising decisions alongside a controlled, **sandbox-only** checkout workflow. The PayPal-specific gateway implements REST OAuth 2.0 and Orders v2 to create and retrieve synthetic orders, direct a buyer to PayPal's sandbox approval page, and capture an approved order. No production PayPal payments or real funds are involved.
 
-## PayPal AI Hackathon 2026: intended extension
+An optional OpenAI-compatible model endpoint explains the current order state using limited synthetic fields. It fails closed when live inference is not configured; there is no fabricated model response.
 
-Seller-facing payment approval and reconciliation flow: combine existing stock/spend recommendations with PayPal sandbox Orders API and a bounded AI assistant that explains order/payment outcomes. Keep all real payment actions sandbox-only and human-approved.
+The project also retains the original bilingual (English/Arabic) inventory, campaign, evidence, and what-if dashboards.
 
-### Required before submission
+## What is implemented
 
-- [ ] Integrate a real, testable PayPal sandbox API or SDK as a central feature (for example Orders v2, approved seller checkout and refund simulation).
-- [ ] Make AI operational in the user experience. The inherited Meta API route is disabled, so it cannot be represented as working AI integration.
-- [ ] Implement and test significant functionality in this hackathon's submission period; disclose prior work and provide a clear change log.
-- [ ] Publish an actual functional build, publicly accessible source and an explicit open-source LICENSE file.
-- [ ] Record an event-specific YouTube demo under three minutes, demonstrating the PayPal sandbox and AI behavior.
+- PayPal Orders v2 sandbox API client, server-side OAuth, create/get/capture routes, and localhost-only demonstration UI.
+- Explicit merchant approval checks and caller-stable request IDs for safe retries.
+- Buyer approval performed separately in the official PayPal sandbox.
+- Live model-provider adapter for merchant-facing transaction explanations, with bounded order fields.
+- Automated tests covering authorization, retries, denied capture, API failure, and AI fail-closed behavior.
 
-The public app at https://sellerpilot-ai-phi.vercel.app and its three-minute video show the **original Meta project**; they are not an event-specific PayPal demonstration. Do not cite them as proof of PayPal integration. Original history and original source remain accessible for audit.
+## Verification status
 
----
+A **direct developer sandbox API test** on November 2, 2026 successfully authenticated, created a simulated USD 0.01 order, obtained personal sandbox-buyer approval, captured it, and independently rechecked its `COMPLETED` status.
 
-## Existing implementation — original Meta project baseline (retained for provenance)
+**Scope of that evidence:** the direct PayPal developer API test confirms the sandbox credentials and PayPal payment lifecycle. It was **not executed through the SellerPilot gateway or browser demo**. The gateway has passing mock/regression tests, but its own authenticated end-to-end run and a real model-generated explanation still require verification. No final hackathon submission is claimed here.
 
-### SellerPilot AI — intelligence, in control.
+## Run locally
 
-**An evidence-backed, bilingual marketplace-operations copilot for Amazon.sa and Noon.sa.**
+**Requirements:** Node.js 22+ and npm for the dashboard; the standalone PayPal sandbox gateway supports Node.js 20+.
 
-[**Launch the live hackathon demo**](https://sellerpilot-ai-phi.vercel.app) · [**Watch the exactly 3:00 cinematic demo**](https://sellerpilot-ai-phi.vercel.app/demo-video.mp4) · [Architecture](docs/ARCHITECTURE.md) · [3-minute demo outline](docs/DEMO_SCRIPT.md) · [Test & release evidence](docs/QA_REPORT.md)
-
-> **Hackathon prototype:** Created during the Meta Global AI Developer Hackathon, October 26–November 4, 2026. Startup Track → Build for Your World. Demo data is synthetic. The production demo does not connect to private sellers or modify advertising accounts.
-
-![Bilingual inventory-aware SellerPilot dashboard](docs/assets/dashboard-en.jpg)
-
-## The problem
-
-A campaign showing 7× ROAS can be **bad for a business if the advertised SKU runs out before replenishment**. Ad managers usually see campaign performance; inventory operators see supply. Neither sees the consequences together. SellerPilot bridges that gap with evidence and keeps human control of every action.
-
-## Working features
-
-| Feature | Status | How it works |
-|---|---|---|
-| Cross-marketplace command center | Working | Blended attributed revenue, ad spend, ROAS, priority signals |
-| 9-campaign synthetic demo | Working | Amazon.sa + Noon.sa examples, CSV files shipped in \`public/demo/\` |
-| Opportunity radar | Working | Stockout risk, ad-spend waste, replenishment warnings, scale review |
-| Explainable evidence | Working | Every action links to financial metrics and formulas |
-| Inventory-aware what-if simulator | Working | Change hypothetical spend ±30%; stress-test stock runway with disclosed assumptions |
-| Seller-approval studio | Working | Stage proposals, then download formula-injection-safe CSV; no live writes |
-| English + Arabic RTL | Working | One-click localization of labels, alerts and layout |
-| In-browser CSV import | Working | Strict canonicalized rows; raw reports never uploaded to any API |
-| Deterministic analysis API | Working | Auth-free \`POST /api/analyze\`, validated by Zod |
-| Meta Muse Spark 1.3 Contributor tool-calling pipeline | Implemented and mock-tested | Meta Chat Completions with structured read-only tool calls |
-| Live Meta Model API inference | **Disabled** | Waiting for awarded credits and explicit billing-safe activation; no live inference is claimed |
-| Data-trust monitoring | Working | Report freshness, duplicate grain, cost consistency and velocity checks |
-| Amazon Ads daily advertised-product import | Working | Verified report columns, separate SKU costs, VAT control; see import guide |
-| Native Noon Ad Manager export | Pending format verification | Canonical Noon CSV is supported | Vendor exports must first be mapped into documented canonical columns |
-
-![Opportunity radar in Arabic](docs/assets/radar-ar.jpg)
-![Evidence drawer and what-if simulator](docs/assets/simulator-en.jpg)
-![Report quality and trust monitor](docs/assets/data-quality-en.jpg)
-
-## Quickstart
-
-Requirements: Node.js 22+ and npm.
-
-\`\`\`bash
+```bash
 git clone https://github.com/tareq7/sellerpilot-paypal-ai-2026.git
 cd sellerpilot-paypal-ai-2026
 npm ci
 npm test
 npm run build
-npm run dev
-\`\`\`
+```
 
-Browse the local Vite URL. The demo is functional even with **no API key, no credit card, and no external service**.
+For the separate PayPal gateway, enter sandbox-only credentials in a **private terminal environment**, never in source code, public issues, or screenshots:
 
-## Analytical contract
+```bash
+cd paypal-sandbox
+export PAYPAL_SANDBOX_CLIENT_ID='YOUR_SANDBOX_CLIENT_ID'
+export PAYPAL_SANDBOX_CLIENT_SECRET='YOUR_SANDBOX_CLIENT_SECRET'
+export API_APPROVAL_TOKEN='A_RANDOM_SECRET_AT_LEAST_32_CHARACTERS'
+node index.mjs
+```
 
-Ads CSV:
+Browse to [http://127.0.0.1:4202/demo](http://127.0.0.1:4202/demo), enter the local approval token, create a synthetic order, approve using a **personal PayPal sandbox buyer account**, refresh the order, and capture it only after approval.
 
-\`\`\`csv
-date,marketplace,sku,campaign,impressions,clicks,orders,spend_sar,revenue_sar,unit_cost_sar
-\`\`\`
+Optionally, configure `MODEL_CHAT_COMPLETIONS_URL`, `MODEL_ID`, and `MODEL_API_KEY` for a genuine supported chat-completions provider before starting the gateway. The app reports model errors rather than supplying fictitious explanations.
 
-Inventory CSV:
+For API request formats, current safety constraints, and regression tests, see [paypal-sandbox/README.md](paypal-sandbox/README.md).
 
-\`\`\`csv
-marketplace,sku,available_units,inbound_units,avg_daily_units,lead_time_days
-\`\`\`
+## Security boundaries
 
-Only \`Amazon.sa\` and \`Noon.sa\` are accepted. Ads revenue is **net of VAT**, according to the data contract. Monetary values are SAR. An estimated financial contribution is revenue − attributed units × estimated cost of goods − ad spend; it **is not net profit** and excludes fulfillment, commissions, VAT adjustments, overhead, and returns. Historical attribution, inconsistent time windows, and incomplete cost data affect interpretation. Formula values are deterministic, not model inventions.
+- PayPal API calls target `https://api-m.sandbox.paypal.com` only.
+- The gateway listens on `127.0.0.1`; do **not** expose it publicly without additional security review.
+- The app uses synthetic test fixtures, not private customer records.
+- Buyer approval and server-side capture are separate, explicit actions.
+- This is a hackathon prototype, not a production checkout, identity, or accounting service. It lacks production-grade session management, durable audit infrastructure, and multi-tenant authorization.
 
-Each browser-imported file is capped at 600 KB and 2,000 records. Canonical CSV import is intentionally strict. Real Amazon/Noon report formats vary by account, market and report type; they require explicit mapping, not blind column guessing.
+## Original work and attribution
 
-## Architecture
+This repository is an adaptation of [SellerPilot AI](https://github.com/tareq7/sellerpilot-ai), developed for the October 2026 Meta Global AI Developer Hackathon. Its original bilingual interface, inventory/advertising analysis and demo media predate the PayPal event. The PayPal-specific gateway, simulated checkout UI and corresponding tests were developed for this hackathon. Original Git history is retained for transparent attribution and judging.
 
-\`\`\`text
-Amazon & Noon reports → local CSV validation → deterministic metrics & inventory engine
-                                       ├── ranked evidence-backed decision proposals
-                                       ├── in-browser sensitivity analysis
-                                       ├── seller-reviewed, safe CSV exports
-                                       └── optional Meta Muse Spark 1.3 Contributor tool-calling interface
-                                                   ↓ (only when explicitly enabled)
-                                          server-only secure Model API
-\`\`\`
+## License, demo and final submission
 
-- **Frontend:** React 19 + TypeScript + Vite; fully responsive, Arabic RTL.
-- **Analysis:** TypeScript pure functions with explicit unit-tested calculations.
-- **Backend:** Hono + Zod; Cloudflare Worker and Vercel standalone Node function adapters.
-- **Hosting:** Free, open-source hackathon application, automatically deployed to Vercel Hobby from Git. Cloudflare Workers Free is another supported deployment target.
-- **Model:** Real Meta Model API request contract: \`POST https://api.meta.ai/v1/chat/completions\`, model \`muse-spark-1.3\`; see [official quickstart](https://dev.meta.ai/docs/cookbook/quickstart-chat-completions). Mock-tested tools return **already verified** KPIs and recommendations, never raw private sales CSVs.
-- **No GitHub Actions dependency:** Builds are performed from Git integration on the connected host. Source and tests are inspectable in this repository.
+A top-level software `LICENSE` and documented rights for inherited images/video must be finalized before a qualifying submission. Public source, a reproducible functional demo, and a new **public YouTube video shorter than three minutes** are required by the [official PayPal AI Hackathon rules](https://paypalaihackathon.devpost.com/rules).
 
-## Amazon seller report importer
+**Submission deadline:** November 12, 2026, 12:00 PM Pacific Time.
 
-See the [daily Amazon Ads import guide](docs/AMAZON_ADS_IMPORT.md) and [SKU cost CSV template](public/demo/sku-cost-template.csv). Reports are parsed in the browser without uploading private CSVs. This is not a connection to the live seller account.
-
-## Security and spend controls
-
-- No private credentials, marketplace order data or seller returns are in the repository.
-- The public demo **never** executes a marketplace mutation.
-- By default \`ALLOW_MODEL_CALLS=false\`. The live \`/api/agent\` endpoint intentionally returns HTTP 503.
-- Activation requires **all three** server-only values: \`ALLOW_MODEL_CALLS=true\`, \`MODEL_API_KEY\`, and \`AI_ACCESS_TOKEN\`. Do not activate until credits and billing risks are explicitly approved and verified.
-- Every mock-based Meta tool test runs without making a live API call.
-- Exported CSVs are prefixed safely to prevent spreadsheet formula execution.
-- Any future integration with live seller accounts needs stronger authorization, throttling, durable merchant consent, and data privacy controls. See [Security](docs/SECURITY.md).
-
-## Hackathon work provenance
-
-Newly created in the October 26–November 4 hackathon window: repository, canonical CSV parser, stock-aware deterministic engine, secure API, Meta tool-calling integration, bilingual interface, explainability drawer, simulation engine, human-approval flow, synthetic fixture, and automated test suite. Prior experience with Smart Creations marketplace operations informed the problem; **no prior proprietary claims tool or customer dataset is copied into this project.**
-
-### Testing and release
-
-Run \`npm test\` for Vitest and \`npm run build\` for TypeScript, Vite, and standalone API packaging. The live site, API routes, browser interactions, bilingual state, approval controls, and simulated billing gate were also inspected from an authorized Fleet VM. The running hosted inference remains disabled.
-
-Contributions and issues are welcome. The software is a hackathon demonstration, not investment or financial advice. All bid, budget and stock decisions require independent seller validation.
-
-## Contributor mode: verified selection and billing safeguards (October 27, 2026)
-
-SellerPilot now selects the official Meta model ID `muse-spark-1.3-contributor` on the Chat Completions API. Meta lists $0.10 per million input tokens and $0.20 per million output tokens. Contributor inputs and outputs **may be used by Meta to improve models**, so the app uses a fixed, server-owned synthetic fixture, never private CSV uploads, and the copilot requires a private operator token. The owner confirmed a $150 promotional credit allocation and S$0.00 balance by screenshot. A card is present; Meta explicitly says spend alerts are **not** hard stops and the card could be charged after credits run out. Therefore the production model endpoint stays off by default. A dedicated project API key was created in the Meta dashboard, but live Meta API inference has been verified in the Meta developer playground on synthetic input, but the SellerPilot server-side tool-calling route remains privately gated and unverified. See [Meta's model list](https://dev.meta.ai/docs/models), [pricing](https://dev.meta.ai/docs/pricing-rate-limits), and [spending alerts](https://dev.meta.ai/help/billing/spend-limit-alert).
-
-### Genuine Meta Contributor provider verification
-
-On October 27, 2026, the authenticated Meta Model API playground returned a real \`muse-spark-1.3-contributor\` response for a synthetic SKU with 10 days stock cover, 30-day replenishment lead, and 7x ROAS, identifying stockout as the first risk. See [provider test screenshot](docs/assets/meta-contributor-playground.jpg) and the [3-minute cinematic demo](https://sellerpilot-ai-phi.vercel.app/demo-video.mp4). This demonstrates provider inference, **not** an end-to-end call from SellerPilot's gated \`/api/agent\` route; the server-side function-calling loop remains mock-tested only.
-
-### New founder-style ElevenLabs v4 video (October 27, 2026)
-
-[Watch the exactly 3:00 Full HD film](https://sellerpilot-ai-phi.vercel.app/demo-video.mp4). ElevenLabs v4, Mark — Natural Conversations, inline voice-direction tags and 18 premium cinematic scenes. No LLM chat ending. [Read the script and production notes](docs/VIDEO_V4_SCRIPT.md).
-
-**Voice credit:** ElevenLabs (11.ai), Eleven v4 — Mark, Natural Conversations.
-
-### October 28, 2026: exactly three-minute premium video
-
-[Watch the Full HD video](https://sellerpilot-ai-phi.vercel.app/demo-video.mp4) | [Poster](public/demo-poster.jpg). The new 180.000-second video uses 18 cinematic scenes and actual high-resolution SellerPilot screenshots across almost the full frame, plus original motion-graphic data visualizations and ambient soundtrack. The existing ElevenLabs Eleven v4 founder narration is retained at normal speed and natural breaks allow more time to read app screens. Voice credit: 11.ai. The app tool-calling endpoint remains private and gated.
-
-### Latest demo: clean, voice-only three-minute film (October 28)
-
-[Watch the exactly 3:00, Full-HD video](https://sellerpilot-ai-phi.vercel.app/demo-video.mp4) and [listen to the narration alone](https://sellerpilot-ai-phi.vercel.app/demo-voiceover.mp3). The video has 18 corrected scenes, authentic screen captures at their original proportions, repaired opening and closing titles, no music, no sound effects, no background ambience and no silent lead-in. ElevenLabs Eleven v4 voice: Mark; attribution 11.ai. [Production notes](docs/VIDEO_VOICE_ONLY_FINAL.md).
+This README describes the current candidate and its verified evidence; it does not claim the final Devpost entry has been submitted.
