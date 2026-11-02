@@ -1,6 +1,8 @@
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { randomUUID, timingSafeEqual } from 'node:crypto';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const ORIGIN = 'https://api-m.sandbox.paypal.com';
 const ORDER_ID = /^[A-Z0-9]{8,32}$/;
@@ -155,7 +157,7 @@ export function makeServer({ client = new PayPalSandbox(), env = process.env, ex
     }
   });
 }
-if (process.argv[1] && import.meta.url === new URL('file://' + process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   // Explicitly localhost-only. Do not deploy without session auth and risk review.
   const port = Number(process.env.PORT || 4202);
   makeServer().listen(port, '127.0.0.1', () => console.log('SellerPilot PayPal SANDBOX gateway on localhost:' + port));
