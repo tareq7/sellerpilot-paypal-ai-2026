@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PayPalSandbox, SafeError, explainOrderWithModel, makeServer } from './index.mjs';
+import { PayPalSandbox, SafeError, explainOrderWithModel, makeServer, sanitizedOrderForModel } from './index.mjs';
 const response = (data, status=200) => ({ ok: status >= 200 && status < 300, status, text: async () => JSON.stringify(data) });
 test('does not issue OAuth token or order without approval', async () => {
   const calls=[];
@@ -56,4 +56,40 @@ test('HTTP gateway requires approval token before PayPal calls', async () => {
     const r=await fetch('http://127.0.0.1:'+port+'/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:'{"amount":"1.00"}'});
     assert.equal(r.status,401);
   }finally{await new Promise(r=>server.close(r));}
+});
+
+test('AI only receives sanitized capture evidence, not PayPal buyer or shipping data', async () => {
+  const order = {
+    id: 'SANDBOXORDER1234', status: 'COMPLETED',
+    payer: { email_address: 'private-buyer@example.invalid' },
+    purchase_units: [{
+      amount: { currency_code: 'USD', value: '0.01', internal_reference: 'private-code' },
+      shipping: { name: { full_name: 'Private Sandbox Buyer' } },
+      payments: { captures: [{
+        id: 'CAPTURE12345', status: 'COMPLETED',
+        amount: { currency_code: 'USD', value: '0.01', extraneous: 'private-extra' },
+        seller_receivable_breakdown: { amount: 'do not send' }
+      }] }
+    }]
+  };
+  const safe = sanitizedOrderForModel(order);
+  assert.equal(safe.captures[0].status, 'COMPLETED');
+  assert.equal(safe.captures[0].amount.value, '0.01');
+  assert.deepEqual(Object.keys(safe.amount), ['currency_code', 'value']);
+  let modelRequest;
+  const answer = await explainOrderWithModel(order, {
+    endpoint: 'https://example.invalid/v1/chat/completions',
+    key: 'mock-key', model: 'mock-model',
+    fetcher: async (_url, options) => {
+      modelRequest = JSON.parse(options.body);
+      return response({ choices: [{ message: { content: 'The simulated capture is completed.' } }] });
+    }
+  });
+  assert.equal(answer.explanation, 'The simulated capture is completed.');
+  assert.equal(answer.order.captures[0].id, 'CAPTURE12345');
+  const submitted = JSON.stringify(modelRequest);
+  assert.ok(submitted.includes('CAPTURE12345'));
+  for (const secret of ['private-buyer@example.invalid', 'Private Sandbox Buyer', 'private-code', 'private-extra', 'seller_receivable_breakdown', 'do not send']) {
+    assert.equal(submitted.includes(secret), false, 'Unexpected field submitted to model');
+  }
 });
