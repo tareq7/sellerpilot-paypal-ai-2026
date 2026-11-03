@@ -1,6 +1,7 @@
 # SellerPilot AI — PayPal AI Hackathon 2026
 
-**Human-approved merchant operations with PayPal sandbox checkout and AI explanations.**
+I’m building SellerPilot PayPal AI so a seller can check an order, test a PayPal checkout, and get a simple explanation before taking action. I confirmed one simulated checkout directly through PayPal’s sandbox. The full checkout through my app and the live AI explanation still need their own end-to-end tests, so this project is not ready for final submission yet.
+
 
 [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/) · [Sandbox gateway](paypal-sandbox/README.md) · [Original SellerPilot project](https://github.com/tareq7/sellerpilot-ai)
 
