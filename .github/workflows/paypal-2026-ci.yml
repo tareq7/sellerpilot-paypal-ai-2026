@@ -16,8 +16,9 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      - name: Gateway mock tests (not proof of PayPal sandbox integration)
-        run: node --test paypal-sandbox/test.mjs paypal-sandbox/idempotency.test.mjs paypal-sandbox/demo.test.mjs
+      - name: Complete gateway mock and regression tests (not live PayPal proof)
+        working-directory: paypal-sandbox
+        run: npm test
       - name: Original SellerPilot dependency/install tests
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Run inherited tests

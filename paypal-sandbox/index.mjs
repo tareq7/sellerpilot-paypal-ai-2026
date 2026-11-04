@@ -163,7 +163,10 @@ export function makeServer({ client = new PayPalSandbox(), env = process.env, ex
       const capture = /^\/orders\/([A-Z0-9]{8,32})\/capture$/.exec(req.url || '');
       if (capture && req.method === 'POST') {
         const body = await readBody(req);
-        return respond(200, await client.captureOrder({ orderId: capture[1], ...body }));
+        if (body === null || typeof body !== 'object' || Array.isArray(body)) throw new SafeError('Invalid JSON body', 400);
+        if (body.orderId != null && body.orderId !== '' && body.orderId !== capture[1]) throw new SafeError('Order ID in body must match URL', 400);
+        const { orderId: _ignore, ...safeBody } = body;
+        return respond(200, await client.captureOrder({ orderId: capture[1], ...safeBody }));
       }
       const retrieve = /^\/orders\/([A-Z0-9]{8,32})$/.exec(req.url || '');
       if (retrieve && req.method === 'GET') return respond(200, await client.getOrder(retrieve[1]));
