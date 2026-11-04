@@ -107,6 +107,8 @@ if(captureConfirm){
   syncCaptureBtn();
 }
 el('orderId')?.addEventListener('input',()=>{
+  // Increment even if the user selects A → B → A: old async requests are invalid.
+  sessionRevision++;
   confirmedCaptureOrderId='';
   if(captureConfirm) captureConfirm.checked=false;
   setBusy(busyOps.size>0);
@@ -203,6 +205,10 @@ el('refresh').addEventListener('click',async()=>{
     setStatus('Order COMPLETED but capture not verified — do not claim as completed without matching capture record','error', 'Response shows COMPLETED but missing/incorrect capture details.');
   } else if(data.status==='APPROVED'){
     if(captureOutcomeUncertain && captureOutcomeUncertainOrderId===id){
+      // Confirmation checked while the status request was in flight is too early.
+      // Require the human to confirm only after seeing the fresh APPROVED result.
+      confirmedCaptureOrderId='';
+      if(captureConfirm) captureConfirm.checked=false;
       captureRetryAuthorizedOrderId=id;
       setBusy(busyOps.size>0);
       setStatus('APPROVED after uncertain capture: deliberate retry allowed','approved','Confirm this order again; the original PayPal-Request-Id is retained. No automatic retry or reset.');
@@ -327,7 +333,7 @@ el('explain').addEventListener('click',async()=>{
   if(!isCur()) return;
   if(!res || !res.data){ setStatus('AI explanation unavailable — see console (model not configured returns 503)','error'); return; }
   if(res.ok && res.data.explanation){
-    setStatus('AI explanation received from '+ (res.data.model||'model') +': '+ String(res.data.explanation).slice(0,120),'pending','Up to 8192 explanation characters in audit console. Model output only uses sanitized order fields — not a capture confirmation.');
+    setStatus('AI explanation received from '+ (typeof res.data.model==='string' ? res.data.model.slice(0,256) : 'model') +': '+ String(res.data.explanation).slice(0,120),'pending','Up to 8192 explanation characters in audit console. Model output only uses sanitized order fields — not a capture confirmation.');
   } else {
     setStatus('AI explanation not available — '+ (res.data.error||'see console'), 'error');
   }
