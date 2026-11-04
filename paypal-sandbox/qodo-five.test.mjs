@@ -123,3 +123,78 @@ test('stale status and explanation responses do not overwrite newly selected ord
     }finally{h.restore();}
   }
 });
+
+
+test('confirmation checked during an uncertain-capture status recheck is revoked after APPROVED',async()=>{
+  const h=setup();let getCount=0,postCount=0;let resolvePending;
+  const pending=new Promise(resolve=>{resolvePending=resolve;});
+  globalThis.fetch=async(url,opts)=>{
+    if(opts.method==='GET'){
+      getCount++;
+      if(getCount===2)return pending;
+      return response(approved('ORDERAAA12345'));
+    }
+    if(url.endsWith('/capture')){
+      postCount++;
+      if(postCount===1)throw Error('ambiguous capture response');
+      return response(completed('ORDERAAA12345'));
+    }
+    throw Error('Unexpected route');
+  };
+  try{
+    await h.load();confirm(h);await h.event('capture');
+    assert.equal(postCount,1);
+    const recheck=h.event('refresh');
+    confirm(h); // Pre-checked before the server replied: NOT fresh consent
+    assert.equal(h.n('captureConfirm').checked,true);
+    resolvePending(response(approved('ORDERAAA12345')));
+    await recheck;
+    assert.match(h.n('statusText').textContent,/deliberate retry allowed/);
+    assert.equal(h.n('captureConfirm').checked,false,'stale approval must be cleared when recheck arrives');
+    assert.equal(h.n('capture').disabled,true,'capture cannot be available without renewed confirmation');
+    await h.event('capture');
+    assert.equal(postCount,1,'no unauthorized retry while checkbox cleared');
+    confirm(h);
+    await h.event('capture');
+    assert.equal(postCount,2,'retry allowed after new confirmation');
+  }finally{h.restore();}
+});
+
+test('A to B to A edit invalidates pending refresh, explanation, and capture preflight',async()=>{
+  for(const op of ['refresh','explain','capture']){
+    const h=setup();
+    let resolvePending;let capturePosts=0;
+    const pending=new Promise(resolve=>{resolvePending=resolve;});
+    globalThis.fetch=async(url,opts)=>{
+      if(url.endsWith('/capture')){capturePosts++;return response(completed('ORDERAAA12345'));}
+      return pending;
+    };
+    try{
+      await h.load();
+      if(op==='capture')confirm(h);
+      const old=h.event(op);
+      h.n('orderId').value='ORDERBBB12345';h.event('orderId','input');
+      h.n('orderId').value='ORDERAAA12345';h.event('orderId','input');
+      resolvePending(response(op==='explain'
+        ? {model:'stale-model',explanation:'STOLEN OLD EXPLANATION'}
+        : op==='refresh'?completed('ORDERAAA12345'):approved('ORDERAAA12345')));
+      await old;
+      assert.match(h.n('statusText').textContent,/Selected order changed/);
+      assert.doesNotMatch(h.n('output').textContent,/STOLEN OLD EXPLANATION|CAPTURE123/);
+      assert.equal(h.n('captureConfirm').checked,false);
+      assert.equal(capturePosts,0,'old preflight cannot trigger payment capture');
+    }finally{h.restore();}
+  }
+});
+
+test('explanation model label is bounded even when provider returns oversized text',async()=>{
+  const h=setup(); const huge='M'.repeat(3000);
+  globalThis.fetch=async()=>response({model:huge,explanation:'Bounded explanation'});
+  try{
+    await h.load();await h.event('explain');
+    const status=h.n('statusText').textContent;
+    assert.ok(status.includes('M'.repeat(256)));
+    assert.ok(!status.includes('M'.repeat(257)));
+    assert.ok(status.length<550);
+  }finally{h.restore();}
+});
