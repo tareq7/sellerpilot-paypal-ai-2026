@@ -51,18 +51,34 @@ function sanitizeForDisplay(body){
       return u;
     });
   }
+  if(typeof body.model==='string') out.model=safeText(body.model);
+  if(typeof body.explanation==='string') out.explanation=body.explanation.slice(0,8192);
+  if(body.order && typeof body.order==='object' && !Array.isArray(body.order)){
+    const safeOrder={};
+    for(const k of ['id','status','capture_status']) if(typeof body.order[k]==='string') safeOrder[k]=safeText(body.order[k]);
+    if(body.order.amount) safeOrder.amount=safeAmount(body.order.amount);
+    out.order=safeOrder;
+  }
   // Approval links are shown through the separate validated button, not JSON.
   return out;
 }
 function setBusy(busy){
   for(const id of ['create','refresh','capture','explain','newOrder']){
-    const n=el(id); if(n) n.disabled=busy;
+    const n=el(id); if(n) n.disabled=Boolean(busy || (captureOutcomeUncertain && (id==='create'||id==='newOrder')));
   }
   const cap=el('capture');
-  if(cap) cap.disabled=Boolean(busy || captureOutcomeUncertain || (captureConfirm && !captureConfirm.checked));
+  if(cap){
+    const id=(el('orderId')?.value||'').trim().toUpperCase();
+    const confirmed=Boolean(captureConfirm?.checked && confirmedCaptureOrderId===id);
+    const retry=Boolean(captureOutcomeUncertain && captureOutcomeUncertainOrderId===id && captureRetryAuthorizedOrderId===id);
+    cap.disabled=Boolean(busy || !confirmed || (captureOutcomeUncertain && !retry));
+  }
 }
 const busyOps=new Set();
 let captureOutcomeUncertain=false;
+let captureOutcomeUncertainOrderId='';
+let captureRetryAuthorizedOrderId='';
+let confirmedCaptureOrderId=captureConfirm?.checked ? (el('orderId')?.value||'').trim().toUpperCase() : '';
 const markBusy=(op, busy)=>{
   if(busy) busyOps.add(op); else busyOps.delete(op);
   setBusy(busyOps.size>0);
@@ -83,11 +99,20 @@ const call=async (method,path,body,isCurrent=()=>true)=>{
 // Manage captureConfirm enabling
 if(captureConfirm){
   const capBtn=el('capture');
-  const syncCaptureBtn=()=>setBusy(busyOps.size>0);
+  const syncCaptureBtn=()=>{
+    confirmedCaptureOrderId=captureConfirm.checked ? (el('orderId')?.value||'').trim().toUpperCase() : '';
+    setBusy(busyOps.size>0);
+  };
   captureConfirm.addEventListener('change', syncCaptureBtn);
   syncCaptureBtn();
 }
+el('orderId')?.addEventListener('input',()=>{
+  confirmedCaptureOrderId='';
+  if(captureConfirm) captureConfirm.checked=false;
+  setBusy(busyOps.size>0);
+});
 el('create').addEventListener('click',async()=>{
+  if(captureOutcomeUncertain){ setStatus('Resolve capture for '+captureOutcomeUncertainOrderId+' before another order','error'); return; }
   if(isBusy('create')){ setStatus('Create already in flight — duplicate click ignored', 'busy'); return; }
   const amount=el('amount').value.trim();
   if(!/^(?:0|[1-9][0-9]{0,2})\.[0-9]{2}$/.test(amount)||Number(amount)<0.01||Number(amount)>10){
@@ -117,6 +142,9 @@ el('create').addEventListener('click',async()=>{
   lastCreatedAmount = amount;
   lastCreatedOrderId = data.id||'';
   el('orderId').value=data.id||'';
+  confirmedCaptureOrderId='';
+  if(captureConfirm) captureConfirm.checked=false;
+  setBusy(busyOps.size>0);
   const link=(data.links||[]).find(x=>x.rel==='approve'||x.rel==='payer-action');
   const holder=el('approvalLink');holder.replaceChildren();
   let hasLink=false;
@@ -142,11 +170,12 @@ const selectedId=()=>{
   if(!/^[A-Z0-9]{8,32}$/.test(id)){record(0,{error:'Enter a valid PayPal sandbox order ID first'});setStatus('Enter a valid PayPal sandbox order ID (8-32 alphanumerics)','error');return null}
   return id;
 };
-const currentSession=()=>{const revision=sessionRevision;return ()=>revision===sessionRevision};
+const currentSession=(id)=>{const revision=sessionRevision;return ()=>revision===sessionRevision && (el('orderId')?.value||'').trim().toUpperCase()===id};
 el('refresh').addEventListener('click',async()=>{
   const id=selectedId();if(!id)return;
+  if(captureOutcomeUncertain && id!==captureOutcomeUncertainOrderId){ setStatus('Unresolved capture for '+captureOutcomeUncertainOrderId+'; check that original order','error'); return; }
   if(isBusy('refresh')){ setStatus('Status check already in flight — duplicate ignored','busy'); return; }
-  const isCur=currentSession();
+  const isCur=currentSession(id);
   markBusy('refresh', true);
   setStatus('Checking order status for '+id+'…','busy');
   const res=await call('GET','/orders/'+encodeURIComponent(id),undefined,isCur);
@@ -159,14 +188,23 @@ el('refresh').addEventListener('click',async()=>{
   const amt= (id===lastCreatedOrderId && lastCreatedAmount) ? lastCreatedAmount : unit?.amount?.value;
   const verified=amt ? verifiedCaptureClient(data, id, amt) : null;
   if(verified){
-    captureOutcomeUncertain=false;
+    if(captureOutcomeUncertain && captureOutcomeUncertainOrderId===id){
+      captureOutcomeUncertain=false;
+      captureOutcomeUncertainOrderId='';
+      captureRetryAuthorizedOrderId='';
+    }
+    confirmedCaptureOrderId='';
     if(captureConfirm) captureConfirm.checked=false;
     setBusy(busyOps.size>0);
     setStatus('Capture COMPLETED — verified capture '+verified.id+' $'+verified.amount.value+' '+verified.amount.currency_code, 'completed', 'Order '+id+' is COMPLETED with matching capture. No further capture needed.');
   } else if(data.status==='COMPLETED'){
     setStatus('Order COMPLETED but capture not verified — do not claim as completed without matching capture record','error', 'Response shows COMPLETED but missing/incorrect capture details.');
   } else if(data.status==='APPROVED'){
-    setStatus('Order APPROVED — ready to capture (check confirm box)', 'approved', 'Buyer has approved. You may now confirm and capture.');
+    if(captureOutcomeUncertain && captureOutcomeUncertainOrderId===id){
+      captureRetryAuthorizedOrderId=id;
+      setBusy(busyOps.size>0);
+      setStatus('APPROVED after uncertain capture: deliberate retry allowed','approved','Confirm this order again; the original PayPal-Request-Id is retained. No automatic retry or reset.');
+    }else setStatus('Order APPROVED — ready to capture (check confirm box)', 'approved', 'Buyer has approved. You may now confirm and capture.');
   } else if(data.status==='CREATED'){
     setStatus('Order CREATED — approval pending (buyer must approve in sandbox.paypal.com)','pending');
   } else if(data.status){
@@ -177,16 +215,16 @@ el('refresh').addEventListener('click',async()=>{
 });
 el('capture').addEventListener('click',async()=>{
   const id=selectedId();if(!id)return;
-  if(captureConfirm && !captureConfirm.checked){ record(0,{error:'Confirm capture checkbox required — check the box to confirm capturing this APPROVED sandbox order'}); setStatus('Capture confirmation required — check the confirmation box','error'); return; }
+  if(captureConfirm && (!captureConfirm.checked || confirmedCaptureOrderId!==id)){ record(0,{error:'Confirm capture checkbox required — check the box to confirm capturing this APPROVED sandbox order'}); setStatus('Capture confirmation required — check the confirmation box','error'); return; }
   if(isBusy('capture')){ setStatus('Capture already in flight — duplicate click ignored','busy'); return; }
-  if(captureOutcomeUncertain){ setStatus('Capture outcome is uncertain. Check the order status first; do not retry or reset.','error'); return; }
+  if(captureOutcomeUncertain && !(captureOutcomeUncertainOrderId===id && captureRetryAuthorizedOrderId===id)){ setStatus('Capture uncertain; check original order for an explicit same-key retry','error'); return; }
   markBusy('capture', true);
   setStatus('Verifying order '+id+' is APPROVED before capture…','busy');
   let requestId;
   try{requestId=operationIds.get('capture',id)}
   catch{record(0,{error:'Could not create a valid capture request identifier'}); setStatus('Could not create capture identifier','error'); markBusy('capture', false); return}
   // Fresh GET check before capture
-  const isCur=currentSession();
+  const isCur=currentSession(id);
   const pre=await call('GET','/orders/'+encodeURIComponent(id),undefined,isCur);
   if(!isCur()){ markBusy('capture', false); return; }
   if(!pre || !pre.data){
@@ -204,6 +242,14 @@ el('capture').addEventListener('click',async()=>{
       const amtExpected = (id===lastCreatedOrderId && lastCreatedAmount) ? lastCreatedAmount : amtFromUnit;
       const verified=amtExpected ? verifiedCaptureClient(order, id, amtExpected) : null;
       if(verified){
+        if(captureOutcomeUncertain && captureOutcomeUncertainOrderId===id){
+          captureOutcomeUncertain=false;
+          captureOutcomeUncertainOrderId='';
+          captureRetryAuthorizedOrderId='';
+        }
+        confirmedCaptureOrderId='';
+        if(captureConfirm) captureConfirm.checked=false;
+        setBusy(busyOps.size>0);
         setStatus('Already CAPTURED — verified capture '+verified.id+' $'+verified.amount.value+' (no retry needed)','completed');
       } else {
         setStatus('Order already COMPLETED but capture not verified — see console','error');
@@ -216,6 +262,8 @@ el('capture').addEventListener('click',async()=>{
   }
   setStatus('Order APPROVED verified — capturing…','busy');
   captureOutcomeUncertain=true;
+  captureOutcomeUncertainOrderId=id;
+  captureRetryAuthorizedOrderId='';
   const capRes=await call('POST','/orders/'+encodeURIComponent(id)+'/capture',{requestId,approved:true},isCur);
   if(!isCur()){ markBusy('capture', false); return; }
   markBusy('capture', false);
@@ -228,6 +276,9 @@ el('capture').addEventListener('click',async()=>{
     // Upstream PayPal failures are mapped to 502 and stay uncertain.
     if([400,401,403,409].includes(capRes.status)){
       captureOutcomeUncertain=false;
+      captureOutcomeUncertainOrderId='';
+      captureRetryAuthorizedOrderId='';
+      confirmedCaptureOrderId='';
       if(captureConfirm) captureConfirm.checked=false;
       setBusy(busyOps.size>0);
       setStatus('Capture was rejected before payment (HTTP '+capRes.status+'). Check status before trying again.','error');
@@ -245,7 +296,12 @@ el('capture').addEventListener('click',async()=>{
     ? lastCreatedAmount : order.purchase_units?.[0]?.amount?.value;
   const verified=expectedAmount ? verifiedCaptureClient(captured,id,expectedAmount) : null;
   if(verified){
-    captureOutcomeUncertain=false;
+    if(captureOutcomeUncertain && captureOutcomeUncertainOrderId===id){
+      captureOutcomeUncertain=false;
+      captureOutcomeUncertainOrderId='';
+      captureRetryAuthorizedOrderId='';
+    }
+    confirmedCaptureOrderId='';
     if(captureConfirm) captureConfirm.checked=false;
     setBusy(busyOps.size>0);
     setStatus('Capture COMPLETED — verified capture '+verified.id+' $'+verified.amount.value+' '+verified.amount.currency_code+' for order '+id,'completed','Live sandbox data: capture ID '+verified.id+' status COMPLETED, order ID and amount verified.');
@@ -260,11 +316,13 @@ el('explain').addEventListener('click',async()=>{
   if(isBusy('explain')){ setStatus('Explain already in flight — duplicate ignored','busy'); return; }
   markBusy('explain', true);
   setStatus('Requesting AI explanation for '+id+'…','busy');
-  const res=await call('POST','/orders/'+encodeURIComponent(id)+'/explain',{},currentSession());
+  const isCur=currentSession(id);
+  const res=await call('POST','/orders/'+encodeURIComponent(id)+'/explain',{},isCur);
   markBusy('explain', false);
+  if(!isCur()) return;
   if(!res || !res.data){ setStatus('AI explanation unavailable — see console (model not configured returns 503)','error'); return; }
   if(res.ok && res.data.explanation){
-    setStatus('AI explanation received from '+ (res.data.model||'model') +': '+ String(res.data.explanation).slice(0,120),'pending','Full explanation in audit console. Model output only uses sanitized order fields — not a capture confirmation.');
+    setStatus('AI explanation received from '+ (res.data.model||'model') +': '+ String(res.data.explanation).slice(0,120),'pending','Up to 8192 explanation characters in audit console. Model output only uses sanitized order fields — not a capture confirmation.');
   } else {
     setStatus('AI explanation not available — '+ (res.data.error||'see console'), 'error');
   }
@@ -281,6 +339,10 @@ el('newOrder').addEventListener('click',()=>{
   sessionRevision++;
   createAttempt++;
   operationIds.reset();
+  captureOutcomeUncertain=false;
+  captureOutcomeUncertainOrderId='';
+  captureRetryAuthorizedOrderId='';
+  confirmedCaptureOrderId='';
   lastCreatedAmount='';
   lastCreatedOrderId='';
   el('orderId').value='';
