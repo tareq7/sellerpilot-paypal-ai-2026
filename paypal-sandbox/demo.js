@@ -264,6 +264,9 @@ el('capture').addEventListener('click',async()=>{
   captureOutcomeUncertain=true;
   captureOutcomeUncertainOrderId=id;
   captureRetryAuthorizedOrderId='';
+  // Every retry requires a fresh explicit confirmation for this same order.
+  confirmedCaptureOrderId='';
+  if(captureConfirm) captureConfirm.checked=false;
   const capRes=await call('POST','/orders/'+encodeURIComponent(id)+'/capture',{requestId,approved:true},isCur);
   if(!isCur()){ markBusy('capture', false); return; }
   markBusy('capture', false);
