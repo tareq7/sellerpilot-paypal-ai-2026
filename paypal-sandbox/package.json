@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test.mjs idempotency.test.mjs demo.test.mjs startup.test.mjs live-acceptance.test.mjs live-acceptance.flow.test.mjs regression.test.mjs",
+    "test": "node --test test.mjs idempotency.test.mjs demo.test.mjs startup.test.mjs live-acceptance.test.mjs live-acceptance.flow.test.mjs regression.test.mjs qodo-five.test.mjs",
     "start": "node index.mjs"
   },
   "engines": {
