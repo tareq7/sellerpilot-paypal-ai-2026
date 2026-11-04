@@ -110,6 +110,8 @@ el('orderId')?.addEventListener('input',()=>{
   confirmedCaptureOrderId='';
   if(captureConfirm) captureConfirm.checked=false;
   setBusy(busyOps.size>0);
+  record(0,{message:'Selected order changed. Previous order details are no longer current.'});
+  setStatus('Selected order changed — check status for this ID','pending','Results for the previously selected order will be ignored.');
 });
 el('create').addEventListener('click',async()=>{
   if(captureOutcomeUncertain){ setStatus('Resolve capture for '+captureOutcomeUncertainOrderId+' before another order','error'); return; }
